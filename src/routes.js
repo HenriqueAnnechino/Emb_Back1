@@ -33,12 +33,23 @@ routes.delete('/modulos/:id', ModuloController.destroy);
 //rotas da estacao
 const DadosDaEstacaoController = require('./controllers/DadosDaEstacaoController');
 routes.get('/dados_da_estacao/:id', DadosDaEstacaoController.show);
-routes.get('/dados_da_estacao', DadosDaEstacaoController.showAll);
+routes.get('/station_data', DadosDaEstacaoController.showAll);
 routes.get('/dados_da_precipitacao', DadosDaEstacaoController.show_precipitation);
 routes.get('/dados_da_temperatura_ar', DadosDaEstacaoController.show_temperatura_ar);
+routes.get('/dados_da_estacao_online', DadosDaEstacaoController.show_online_data);
 routes.post('/dados_da_estacao', DadosDaEstacaoController.store);
 routes.patch('/dados_da_estacao/:id', DadosDaEstacaoController.update);
 routes.delete('/dados_da_estacao/:id', DadosDaEstacaoController.destroy);
+
+//rotas dados diarios estacao
+const DadosDiariosEstacaoController = require('./controllers/DadosDiariosEstacaoController');
+routes.get('/Todos_dados_diario',DadosDiariosEstacaoController.showAll);
+routes.get('/Todos_dados_diario_modulo', DadosDiariosEstacaoController.showMod);
+routes.get('/dados_mensais_anos', DadosDiariosEstacaoController.showAnual);
+routes.post('/dadosDiariosEstacao', DadosDiariosEstacaoController.store);
+routes.patch('/dadosDiariosEstacao/:id', DadosDiariosEstacaoController.update);
+routes.delete('/dadosDiariosEstacao/:id', DadosDiariosEstacaoController.destroy);
+
 
 //rotas da cerca
 const DadosDaCercaController = require('./controllers/DadosDaCercaController');
@@ -68,11 +79,7 @@ routes.delete('/dados_do_Bebedouro/:id', DadosDoBebedouroController.destroy);
 const DadosPrecipitacaoController = require('./controllers/DadosPrecipitacaoController');
 routes.get('/dados_precipitation', DadosPrecipitacaoController.showAll);
 routes.get('/dados_precipitacao', DadosPrecipitacaoController.show);
-routes.post('/dados_da_precipitacao', DadosPrecipitacaoController.store);
-routes.patch('/dados_da_precipitacao/:id', DadosPrecipitacaoController.update);
-routes.delete('/dados_da_precipitacao/:id', DadosPrecipitacaoController.destroy);
 
-routes.get('/dados_diario', DadosPrecipitacaoController.showTemp);
 
 //rotas da Temperatura
 const DadosTemperaturaController = require('./controllers/DadosTemperaturaController');

@@ -21,6 +21,11 @@ const ModulosSchema = new mongoose.Schema({
 		type: String,
 		required: true
 	},
+	altitude:{
+		type: Number,
+		default: -99,
+		required: true
+	},
 	estado:{
 		type: String,
 		required: true
@@ -34,7 +39,7 @@ const ModulosSchema = new mongoose.Schema({
 		required: true
 	},
 	responsavel:{
-			type: String,
+		type: String,
 		required: true
 	},
 	proprietario:{

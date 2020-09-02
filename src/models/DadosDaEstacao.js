@@ -55,10 +55,6 @@ const DadosDaEstacaoSchema = new mongoose.Schema({
     nivelUv:{
       type: Number,
       required: true
-    },
-    mediaUv:{
-      type: Number,
-      required: true
     }
 });
 

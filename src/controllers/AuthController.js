@@ -4,7 +4,7 @@ const jwt = require('jsonwebtoken');
 
 const Usuario = mongoose.model('Usuario');
 
-const secret = 'annicchino';
+const secret = '';
 
 module.exports = {
     async authenticate(req, res) {

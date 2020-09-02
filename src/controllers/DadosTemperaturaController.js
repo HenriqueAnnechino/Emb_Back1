@@ -295,13 +295,20 @@ module.exports = {
 						cont = cont2 = 0;
 						var NewMonth = 0, doc2=[],temperaturaArMaxima,temperaturaArMinima,temperaturaArMedia;cont3=0,tempData1='',tempData2='';
 						temperaturaArMaxima = doc[0].temperaturaArMaxima;temperaturaArMinima = doc[0].temperaturaArMinima;
-						doc2[0]='{"data"'+':'+'"'+TemperatureDate1+'"'+',';
+						doc2[0]='{"data"'+':'+'"'+TemperatureDate1.slice(6,8)+'/'+TemperatureDate1.slice(1,5)+'"'+',';
 						while(cont<doc.length){
 							TemperatureDate2 = JSON.stringify(doc[cont].data);
 							TemperatureDate2 = TemperatureDate2.slice(1,8);
 							if(TemperatureDate1 !== TemperatureDate2){
 								mes=TemperatureDate1.slice(5,8);
 								NewMonth = 1;
+								ano = JSON.stringify(doc[cont-1].data);
+								ano = ano.slice(1,5);
+								if((ano%4===0 && ano%100!==0) || ano%400===0){
+									bissexto = 1;
+								}else{
+									bissexto = 0;
+								}
 								
 								//implementar funcao no futuro tem muito codigo repetido
 								if((mes==='01' || mes==='03' || mes==='05' || mes==='07' || mes==='08' || mes==='10' || mes==='12') && cont3 < 31){

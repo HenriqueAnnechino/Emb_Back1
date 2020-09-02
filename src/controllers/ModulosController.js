@@ -41,7 +41,7 @@ module.exports = {
 	async show_type(req, res){
 		const tipo = req.query.tipo;
 		const online = req.query.online;
-		Modulo.find({"tipo": tipo})
+		Modulo.find({"tipo": tipo}).sort({modulo_id: 1})
 			.select()
 			.exec()
 			.then(doc => {

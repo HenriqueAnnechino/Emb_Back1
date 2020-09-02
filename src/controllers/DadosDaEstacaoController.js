@@ -18,7 +18,8 @@ module.exports = {
 		//const dadosDaEstacao = await DadosDaEstacao.findById(req.params.id);
 		//return res.json(dadosDaEstacao);
 		const id = req.params.id;
-		Estacao.findById(id)
+		//Estacao.findById(id)
+		Estacao.find({"modulo_id": id}).sort({createdAt: -1})
 			.select('_id modulo_id serial_sensor data horario precipitacao temperaturaAr umidadeAr pressaoAr temperaturaSolo umidadeSolo vento nivelUv mediaUv createdAt')
 			.exec()
 			.then(doc => {
@@ -42,20 +43,66 @@ module.exports = {
 			});
 	},
 	
+	async show_online_data(req, res){
+		const modulo_id = req.query.modulo_id;
+		Estacao.find({"modulo_id": modulo_id}).sort({createdAt: -1}).limit(1)
+		.select('data temperaturaAr umidadeAr vento')
+		.exec()
+		.then(doc => {
+			if(doc){
+				var date = doc[0].data, temperature = doc[0].temperaturaAr, moisture = doc[0].umidadeAr, wind = doc[0].vento;
+				Estacao.find({"modulo_id": modulo_id, "data": date})
+				.select('precipitacao')
+				.exec()
+				.then(doc2 => {
+					if(doc2){
+						var tempdate = JSON.stringify(date);
+						date = tempdate.slice(9,11)+"/"+tempdate.slice(6,8)+"/"+tempdate.slice(1,5);
+						var count=0, precipitation=0;
+						while(count < doc2.length){
+							precipitation+=doc2[count].precipitacao;
+							count++;
+						}
+						res.status(200).json({
+							data: date,
+							temperatura: temperature,
+							umidade: moisture,
+							vento: wind,
+							precipitacao: precipitation
+						});
+					}else{
+						res.status(404).json({message: 'Dado invalido2'});
+					}
+				})
+				.catch(err => {
+					console.log(err);
+					res.status(500).json({error: err});
+				});
+			}else{
+				res.status(404).json({message: 'Dado invalido'});
+			}
+		})
+		.catch(err => {
+			console.log(err);
+			res.status(500).json({error: err});
+		});
+	},
+	
 	async show_precipitation(req, res){
 		const paramenter = req.query.periodo, modulo_id = req.query.modulo_id;
 		if(paramenter==="hoje"){
 			Estacao.find({"modulo_id": modulo_id}).sort({createdAt: -1}).limit(1)
-			.select('createdAt')
+			.select('data')
 			.exec()
 			.then(doc => {
 				//console.log("Do banco de dados", doc);
 				if(doc){
-					var temp = JSON.stringify(doc[0].createdAt), temp2 = JSON.stringify(doc[0].createdAt);
+					/*var temp = JSON.stringify(doc[0].createdAt), temp2 = JSON.stringify(doc[0].createdAt);
 					temp = temp.slice(1,11) + "T00:00:00.000Z";
-					temp2 = temp2.slice(1,11) + "T23:59:59.000Z";
-					Estacao.find({"createdAt": { $gte: temp, $lte: temp2 }}).sort({createdAt: -1})
-					.select('precipitacao createdAt')
+					temp2 = temp2.slice(1,11) + "T23:59:59.000Z";*/
+					var temp = doc[0].data;
+					Estacao.find({"data": temp}).sort({createdAt: -1})
+					.select('precipitacao data horario')
 					.exec()
 					.then(doc2 => {
 						if(doc2){
@@ -83,45 +130,47 @@ module.exports = {
 		}		
 		else if(paramenter==="dia"){
 			Estacao.find({"modulo_id": modulo_id}).sort({createdAt: -1}).limit(49)
-			.select('precipitacao createdAt')
+			.select('data')
 			.exec()
 			.then(doc => {
 				//console.log("Do banco de dados", doc);
 				if(doc){
-					if(doc.length > 48){
+					if(doc.length > 1){
 						var cont = 2;
-						var temp = JSON.stringify(doc[0].createdAt);
-						var temp2 =JSON.stringify(doc[1].createdAt);
-						temp = temp.slice(1,11);
-						temp2 = temp2.slice(1,11);
-						while(temp===temp2){
-							var temp2 =JSON.stringify(doc[cont].createdAt);
-							temp2 = temp2.slice(1,11);
+						var temp = JSON.stringify(doc[0].data);
+						var temp2 = JSON.stringify(doc[1].data);
+						while(temp===temp2 && cont<doc.length){
+							var temp2 = JSON.stringify(doc[cont].data);
 							cont++;
 						}
-						cont-=1;
-						temp=JSON.stringify(doc[cont].createdAt);
-						temp2=JSON.stringify(doc[cont].createdAt);
-						temp = temp.slice(1,11) + "T00:00:00.000Z";
-						temp2 = temp2.slice(1,11) + "T23:59:59.000Z";
-						Estacao.find({"createdAt": { $gte: temp, $lte: temp2 }}).sort({createdAt: -1})
-						.select('precipitacao createdAt')
-						.exec()
-						.then(doc2 => {
-							if(doc2){
-								res.status(200).json({
-									MesesCount: 0,
-									IgualBotao: 1,
-									Precipitacao: doc2
-								});
-							}else{
-								res.status(404).json({message: 'Dado invalido2'});
-							}
-						})
-						.catch(err => {
-							console.log(err);
-							res.status(500).json({error: err});
-						});
+						if(temp!==temp2){
+							temp2 = temp2.slice(1,25);
+							Estacao.find({"data": temp2 }).sort({createdAt: -1})
+							.select('precipitacao data horario')
+							.exec()
+							.then(doc2 => {
+								if(doc2){
+									res.status(200).json({
+										MesesCount: 0,
+										IgualBotao: 1,
+										Precipitacao: doc2
+									});
+								}else{
+									res.status(404).json({message: 'Dado invalido2'});
+								}
+							})
+							.catch(err => {
+								console.log(err);
+								res.status(500).json({error: err});
+							});
+						}
+						else{
+							res.status(200).json({
+								MesesCount: 0,
+								IgualBotao: 0,
+								Precipitacao: []
+							});
+						}
 					}else{
 						res.status(200).json({
 							MesesCount: 0,
@@ -144,16 +193,14 @@ module.exports = {
 		const paramenter = req.query.periodo, modulo_id = req.query.modulo_id;
 		if(paramenter==="hoje"){
 			Estacao.find({"modulo_id": modulo_id}).sort({createdAt: -1}).limit(1)
-			.select('createdAt')
+			.select('data')
 			.exec()
 			.then(doc => {
 				//console.log("Do banco de dados", doc);
 				if(doc){
-					var temp = JSON.stringify(doc[0].createdAt), temp2 = JSON.stringify(doc[0].createdAt);
-					temp = temp.slice(1,11) + "T00:00:00.000Z";
-					temp2 = temp2.slice(1,11) + "T23:59:59.000Z";
-					Estacao.find({"modulo_id": modulo_id, "createdAt": { $gte: temp, $lte: temp2 }}).sort({createdAt: -1})
-					.select('temperaturaAr createdAt')
+					var temp = doc[0].data;
+					Estacao.find({"modulo_id": modulo_id, "data": temp}).sort({createdAt: -1})
+					.select('temperaturaAr data horario')
 					.exec()
 					.then(doc2 => {
 						if(doc2){
@@ -181,45 +228,47 @@ module.exports = {
 		}
 		else if(paramenter==="dia"){
 			Estacao.find({"modulo_id": modulo_id}).sort({createdAt: -1}).limit(49)
-			.select('temperaturaAr createdAt')
+			.select('data')
 			.exec()
 			.then(doc => {
 				//console.log("Do banco de dados", doc);
 				if(doc){
-					if(doc.length > 48){
+					if(doc.length > 1){
 						var cont = 2;
-						var temp = JSON.stringify(doc[0].createdAt);
-						var temp2 =JSON.stringify(doc[1].createdAt);
-						temp = temp.slice(1,11);
-						temp2 = temp2.slice(1,11);
+						var temp = JSON.stringify(doc[0].data);
+						var temp2 =JSON.stringify(doc[1].data);
 						while(temp===temp2){
-							var temp2 =JSON.stringify(doc[cont].createdAt);
-							temp2 = temp2.slice(1,11);
+							var temp2 =JSON.stringify(doc[cont].data);
 							cont++;
 						}
-						cont-=1;
-						temp=JSON.stringify(doc[cont].createdAt);
-						temp2=JSON.stringify(doc[cont].createdAt);
-						temp = temp.slice(1,11) + "T00:00:00.000Z";
-						temp2 = temp2.slice(1,11) + "T23:59:59.000Z";
-						Estacao.find({"createdAt": { $gte: temp, $lte: temp2 }}).sort({createdAt: -1})
-						.select('temperaturaAr createdAt')
-						.exec()
-						.then(doc2 => {
-							if(doc2){
-								res.status(200).json({
-									MesesCount: 0,
-									IgualBotao: 1,
-									Temperatura: doc2
-								});
-							}else{
-								res.status(404).json({message: 'Dado invalido2'});
-							}
-						})
-						.catch(err => {
-							console.log(err);
-							res.status(500).json({error: err});
-						});
+						if(temp!==temp2){
+							temp2 = temp2.slice(1,25);
+							Estacao.find({"modulo_id": modulo_id, "data": temp2}).sort({createdAt: -1})
+							.select('temperaturaAr data horario')
+							.exec()
+							.then(doc2 => {
+								if(doc2){
+									res.status(200).json({
+										MesesCount: 0,
+										IgualBotao: 1,
+										Temperatura: doc2
+									});
+								}else{
+									res.status(404).json({message: 'Dado invalido2'});
+								}
+							})
+							.catch(err => {
+								console.log(err);
+								res.status(500).json({error: err});
+							});
+						}
+						else{
+							res.status(200).json({
+								MesesCount: 0,
+								IgualBotao: 0,
+								Precipitacao: []
+							});
+						}
 					}else{
 						res.status(200).json({
 							MesesCount: 0,
@@ -257,7 +306,7 @@ module.exports = {
 			umidadeSolo: req.body.us,
 			vento: req.body.ve,
 			nivelUv: req.body.nu,
-			mediaUv: req.body.mu,
+			//mediaUv: req.body.mu,
 			//updatedAt: req.body.UP,
       createdAt: req.body.CR
 		});
@@ -274,8 +323,7 @@ module.exports = {
 			.then(doc => {
 				if(doc.length > 1){
 					//console.log("Do banco de dados", doc);
-					var temp = JSON.stringify(doc[0].data), temp2 = JSON.stringify(doc[1].data);
-					JSON.stringify(doc[0].data), data2 = JSON.stringify(doc[1].data);
+					var data1 = JSON.stringify(doc[0].data), data2 = JSON.stringify(doc[1].data), temp, temp2;
 					temp = data1.slice(1,11); temp2 = data2.slice(1,11);
 					if(temp !== temp2){
 						temp = doc[0].data;
@@ -381,7 +429,7 @@ module.exports = {
 					umidadeSolo: result.umidadeSolo,
 					vento: result.vento,
 					nivelUv: result.nivelUv,
-					mediaUv: result.mediaUv,
+					//mediaUv: result.mediaUv,
 					//updatedAt: result.updatedAt,
           createdAt: result.createdAt,
 					_id: result._id,

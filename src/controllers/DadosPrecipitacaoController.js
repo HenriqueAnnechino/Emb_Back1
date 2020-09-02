@@ -9,14 +9,25 @@ const PRecipitacao = require("../models/DadosDiariosEstacao");
 
 module.exports = {
 	async showAll(req, res){
-		const dadosPrecipitacao = await DadosPrecipitacao.find();
-		return res.json(dadosPrecipitacao);
+		PRecipitacao.find().sort({data: 1})
+		.select('precipitacao data')
+		.exec()
+		.then(doc => {
+			if(doc){
+				res.status(200).json({
+					Dados: doc
+				});
+			}
+			else{
+				res.status(404).json({message: 'sem dados'});
+			}
+		})
 	},
 	
 	async showTemp(req, res){
 		const modulo_id = req.query.modulo_id;
 		PRecipitacao.find({"modulo_id": modulo_id}).sort({data: -1})
-		.select()
+		.select('precipitacao data')
 		.exec()
 		.then(doc => {
 			if(doc){
@@ -314,12 +325,21 @@ module.exports = {
 						PrecipitationDate1 = PrecipitationDate1.slice(1,8);
 						cont = cont2 = 0;
 						var meses=[], doc2=[];meses[0]=0,cont3=0,tempData1='',tempData2='';
-						doc2[0]='{"data"'+':'+'"'+PrecipitationDate1+'"'+',';
+						doc2[0]='{"data"'+':'+'"'+PrecipitationDate1.slice(6,8)+'/'+PrecipitationDate1.slice(1,5)+'"'+',';
 						while(cont<doc.length){
 							PrecipitationDate2 = JSON.stringify(doc[cont].data);
 							PrecipitationDate2 = PrecipitationDate2.slice(1,8);
 							if(PrecipitationDate1 !== PrecipitationDate2){
 								mes=PrecipitationDate1.slice(5,8);
+								
+								ano = JSON.stringify(doc[cont-1].data);
+								ano = ano.slice(1,5);
+								
+								if((ano%4===0 && ano%100!==0) || ano%400===0){
+									bissexto = 1;
+								}else{
+									bissexto = 0;
+								}
 								
 								//implementar funcao no futuro tem muito codigo repetido
 								if((mes==='01' || mes==='03' || mes==='05' || mes==='07' || mes==='08' || mes==='10' || mes==='12') && cont3 < 31){
@@ -397,122 +417,6 @@ module.exports = {
 				res.status(500).json({error: err});
 			});
 		}
-	},
-
-//temporario
-	async store(req, res){
-		const precipitaca0 = new PRecipitacao({
-			_id: new mongoose.Types.ObjectId(),
-			modulo_id: req.body.mid,
-			data: req.body.da,
-			precipitacao: req.body.pr,
-			pressaoArMedia: req.body.Prm,
-			pressaoArMaxima: req.body.PRM,
-			pressaoArMinima: req.body.PRm,
-			temperaturaArMedia: req.body.tam,
-			temperaturaArMaxima: req.body.tAM,
-			temperaturaArMinima: req.body.tAm,
-			temperaturaSoloMedia: req.body.tsm,
-			temperaturaSoloMaxima: req.body.tSM,
-			temperaturaSoloMinima: req.body.tSm,
-			umidadeArMedia: req.body.uam,
-			umidadeArMaxima: req.body.uAM,
-			umidadeArMinima: req.body.uAm,
-			umidadeSoloMedia: req.body.usm,
-			umidadeSoloMaxima: req.body.uSM,
-			umidadeSoloMinima: req.body.uSm,
-			ventoMedia: req.body.vtm,
-			ventoMaxima: req.body.vTM,
-			ventoMinima: req.body.vTm,
-			mediaUv: req.body.uvm,
-			maxUv: req.body.uVM,
-			minUv: req.body.uVm
-		});
-		precipitaca0
-			.save()
-			.then(result => {
-				res.status(201).json({
-					message: 'data created successfully',
-					createdStation:{
-						modulo_id: result.modulo_id,
-						data: result.data,
-						precipitacao: result.precipitacao,
-						pressaoArMedia: result.pressaoArMedia,
-						pressaoArMaxima: result.pressaoArMaxima,
-						pressaoArMinima: result.pressaoArMinima,
-						temperaturaArMedia: result.temperaturaArMedia,
-						temperaturaArMaxima: result.temperaturaArMaxima,
-						temperaturaArMinima: result.temperaturaArMinima,
-						temperaturaSoloMedia: result.temperaturaSoloMedia,
-						temperaturaSoloMaxima: result.temperaturaSoloMaxima,
-						temperaturaSoloMinima: result.temperaturaSoloMinima,
-						umidadeArMedia: result.umidadeArMedia,
-						umidadeArMax: result.umidadeArMax,
-						umidadeArMin: result.umidadeArMin,
-						umidadeSoloMedia: result.umidadeArMedia,
-						umidadeSoloMaxima: result.umidadeSoloMaxima,
-						umidadeSoloMinima: result.umidadeSoloMinima,
-						ventoMedia: result.ventoMedia,
-						ventoMaxima: result.ventoMaxima,
-						ventoMinima: result.ventoMinima,
-						mediaUv: result.mediaUv,
-						maxUv: result.maxUv,
-						minUv: result.minUv,
-						_id: result._id
-					}
-				});
-			})
-			.catch(err => {
-				console.log(err);
-				res.status(500).json({
-					error: err
-				});
-			});
-	},
-
-	//desnecessario na versao final
-	async update(req,res){
-		const id = req.params.id;
-		const updateOps = {};
-		for(const ops of req.body){
-			updateOps[ops.propName] = ops.value;
-		}
-		PRecipitacao.update({_id: id}, {$set: updateOps})
-			.exec()
-			.then(result => {
-				console.log(result);
-				res.status(200).json({
-					message: 'Precipitacao Atualizada'
-				});
-			})
-			.catch(err => {
-				console.log(err);
-				res.status(500).json({
-					error: err
-				})
-			});
-	},
-
-	//desnecessario na versao final
-	async destroy(req, res){
-		const id = req.params.id;
-		PRecipitacao.deleteOne({_id: id})
-			.exec()
-			.then(result => {
-				res.status(200).json({
-					message: 'Precipitacao deletada',
-					request:{
-						type: 'POST',
-						body: {da: 'Date', pr: 'Number',CR: 'Date'}
-					}
-				});
-			})
-			.catch(err => {
-				console.log(err);
-				res.status(500).json({
-					error: err
-				});
-			});
 	},
 	
 };

@@ -102,6 +102,14 @@ const DadosDiariosEstacaoSchema = new mongoose.Schema({
 	minUv:{
     type: Number,
     required: true
+  },
+	anoElNino:{
+    type: Number,
+    default: 0
+  },
+	anoLaNina:{
+    type: Number,
+    default: 0
   }
 });
 
